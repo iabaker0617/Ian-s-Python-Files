@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
 # Set page to wide mode for better visualization
 st.set_page_config(layout="wide")
@@ -11,22 +12,19 @@ This app simulates the revenue impact of moving from a flat block rate to a per-
 Adjust the variables in the sidebar to see real-time shifts in net revenue.
 """)
 
-# 1. Load Data
-file_path = r"C:\Users\iabaker\OneDrive - Boston University\Data Projects\Operations\Tuition change prototyping\Tuition change data modeling demo data.xlsx"
-
+# 1. Load Data (FIXED: now uses relative path)
 @st.cache_data
-def load_data(path):
-    # Using 'r' before the string to handle backslashes in Windows paths
-    df = pd.read_excel(path)
+def load_data():
+    file_path = Path(__file__).parent / "Data" / "Tuition change data modeling demo data.xlsx"
+    df = pd.read_excel(file_path)
     return df
 
 try:
-    df_raw = load_data(file_path).copy()
+    df_raw = load_data().copy()
     
     # 2. Sidebar Parameters
     st.sidebar.header("Model Assumptions")
     
-    # Let users override the 'Proposed Per Credit Rate' constant from the sheet
     suggested_rate = st.sidebar.number_input(
         "New Per-Credit Rate ($)", 
         min_value=0, 
@@ -34,8 +32,6 @@ try:
         step=50
     )
     
-    # Let users simulate a shift in the overall discount rate (scholarships)
-    # This defaults to the average in your current data
     current_avg_discount = df_raw['Discount Rate'].mean()
     new_discount_target = st.sidebar.slider(
         "Projected Average Discount (%)", 
@@ -44,14 +40,11 @@ try:
     )
 
     # 3. Calculations
-    # Current State (as defined in your notes)
     df_raw['Current_NTR'] = df_raw['Block Rate'] * (1 - df_raw['Discount Rate'])
     
-    # Proposed State
     df_raw['Proposed_Gross'] = df_raw['Credits Taken'] * suggested_rate
     df_raw['Proposed_NTR'] = df_raw['Proposed_Gross'] * (1 - new_discount_target)
     
-    # Impact
     df_raw['Revenue_Delta'] = df_raw['Proposed_NTR'] - df_raw['Current_NTR']
     
     # 4. Dashboard Metrics
@@ -68,7 +61,6 @@ try:
     # 5. Visual Analysis
     st.subheader("Revenue Impact by Credit Load")
     
-    # Grouping by credits to see who pays more vs less
     credit_analysis = df_raw.groupby('Credits Taken').agg({
         'Current_NTR': 'mean',
         'Proposed_NTR': 'mean',
@@ -82,4 +74,4 @@ try:
     st.dataframe(df_raw[['StudentID', 'Credits Taken', 'Current_NTR', 'Proposed_NTR', 'Revenue_Delta']].head(10))
 
 except Exception as e:
-    st.error(f"Could not load the file. Check if the path is correct and the file is not open in Excel. Error: {e}")
+    st.error(f"Could not load the file. Error: {e}")
