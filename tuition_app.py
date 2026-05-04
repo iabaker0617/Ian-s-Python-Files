@@ -12,10 +12,10 @@ This app simulates the revenue impact of moving from a flat block rate to a per-
 Adjust the variables in the sidebar to see real-time shifts in net revenue.
 """)
 
-# 1. Load Data (FIXED: now uses relative path)
+# 1. Load Data (FIXED: same folder as script)
 @st.cache_data
 def load_data():
-    file_path = Path(__file__).parent / "Data" / "Tuition change data modeling demo data.xlsx"
+    file_path = Path(__file__).parent / "Tuition change data modeling demo data.xlsx"
     df = pd.read_excel(file_path)
     return df
 
@@ -71,7 +71,9 @@ try:
     st.bar_chart(credit_analysis['Revenue_Delta'])
     
     st.write("### Raw Impact Data (Preview)")
-    st.dataframe(df_raw[['StudentID', 'Credits Taken', 'Current_NTR', 'Proposed_NTR', 'Revenue_Delta']].head(10))
+    st.dataframe(
+        df_raw[['StudentID', 'Credits Taken', 'Current_NTR', 'Proposed_NTR', 'Revenue_Delta']].head(10)
+    )
 
 except Exception as e:
     st.error(f"Could not load the file. Error: {e}")
